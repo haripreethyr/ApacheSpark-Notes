@@ -7,13 +7,13 @@ The Catalyst Optimizer builds and perfects the plan, while the DAG sequences tha
 #### STEP-1: THE CATALYST OPTIMIZER (THE BRAIN):
 The <mark style="background: #D2B3FFA6;">Spark's built-in query optimizer engine</mark>. It turns your Python/Scala code and rewrites it as a logical plan behind the scenes to make it run as fast as possible.
 It acts like a smart GPS that finds a shorter route to your destination before you even start driving. It optimizes your query using four major phases:
-	-**Analysis:** It checks your code for typos, validates table or column names, and ensures the data types match up.
-	-**Logical Optimization:** It applies standard Optimization rules to your code. For example:
+	- **Analysis:** It checks your code for typos, validates table or column names, and ensures the data types match up.
+	- **Logical Optimization:** It applies standard Optimization rules to your code. For example:
 		- **Predicate Pushdown:** If you write a filter like `.filter("age > 30")` at the very end of your script, catalyst moves (pushes) that filers directly to the file-reading step. This ensures Spark only reads the rows you need, saving massive amounts of memory.
 		- **Project Pruning / Column Pruning:** If your CSV has 100 columns but you only use 2, Catalyst ensures Spark drops the other 98 columns immediately during the read phase.
-	-**Physical Planning:** It generates multiple physical strategies to actually move the data (e.g., deciding whether to use a _Shuffle Hash Join or a Broadcast Hash Join_) and picks the cheapest one based on cost using a cost model.
-	-**Code Generation:** It compiles your complex expression into clean, highly optimized Java bytecode (JVM code) that runs natively on your cluster's CPU cores.
-  -**RDD:** is fundamentally a distributed collection of data divided into partitions, with information about how those partitions depend on other partitions.
+	- **Physical Planning:** It generates multiple physical strategies to actually move the data (e.g., deciding whether to use a _Shuffle Hash Join or a Broadcast Hash Join_) and picks the cheapest one based on cost using a cost model.
+	- **Code Generation:** It compiles your complex expression into clean, highly optimized Java bytecode (JVM code) that runs natively on your cluster's CPU cores.
+    - **RDD:** is fundamentally a distributed collection of data divided into partitions, with information about how those partitions depend on other partitions.
 
 <img width="1580" height="435" alt="The Catalyst Optimizer" src="https://github.com/user-attachments/assets/6244c830-9eda-4c14-8da3-e970100bb15b" />
 
@@ -39,16 +39,16 @@ It acts like a smart GPS that finds a shorter route to your destination before y
 - Think of the DAG as the map, and the DAG scheduler as the driver who uses that map to navigate the route.
 - The DAG scheduler is an active component inside the Spark Driver node. It is the engine that actually reads the static DAG and turns it into action.
 - When you call an action like `.show()`, the DAG Scheduler wakes up and performs these critical steps:
-	-**Examines the DAG:**  It looks at the entire graph of transformations.
-	-**Finds Shuffle Boundaries:** It looks for wide transformations (like `groupBy`) to figure out where data must be shuffled over the network.
-	-**Splits the DAG into Stages:** It cuts the DAG at those shuffle points, breaking the large graph into manageable, sequential stages.
-	-**Hands off to the task scheduler:** Once it determines the stages, it submits them to the next component (the Task Scheduler) to launch the actual physical tasks on the worker machines.
-	-**Handles Failures:** If an entire stage fails because a worker node died, the DAG Scheduler looks at the DAG map to figure out which missing partitions need to be recomputed.
+	- **Examines the DAG:**  It looks at the entire graph of transformations.
+	- **Finds Shuffle Boundaries:** It looks for wide transformations (like `groupBy`) to figure out where data must be shuffled over the network.
+	- **Splits the DAG into Stages:** It cuts the DAG at those shuffle points, breaking the large graph into manageable, sequential stages.
+	- **Hands off to the task scheduler:** Once it determines the stages, it submits them to the next component (the Task Scheduler) to launch the actual physical tasks on the worker machines.
+	- **Handles Failures:** If an entire stage fails because a worker node died, the DAG Scheduler looks at the DAG map to figure out which missing partitions need to be recomputed.
 
 >**How the DAG manages execution?:**
-	**1. Breaking things into Stages:** The DAG looks at your code and identifies where Shuffles (data movements across the network) happen. It cuts the blueprint at those shuffle boundaries to create Stages.
-	**2. Generating Tasks:** For each stage, Spark creates a task for each relevant partition. The DAG Scheduler submits these tasks as a TaskSet to the Task Scheduler, which schedules them on executor nodes.
-	**3. Fault Tolerance:** Because Spark maintains lineage information, lost partitions can be recomputed from their parent data. The DAG Scheduler can resubmit the necessary tasks/stages to recover missing data.
+	1. **Breaking things into Stages:** The DAG looks at your code and identifies where Shuffles (data movements across the network) happen. It cuts the blueprint at those shuffle boundaries to create Stages.
+	2. **Generating Tasks:** For each stage, Spark creates a task for each relevant partition. The DAG Scheduler submits these tasks as a TaskSet to the Task Scheduler, which schedules them on executor nodes.
+	3. **Fault Tolerance:** Because Spark maintains lineage information, lost partitions can be recomputed from their parent data. The DAG Scheduler can resubmit the necessary tasks/stages to recover missing data.
 
 <img width="980" height="790" alt="DAG Scheduler" src="https://github.com/user-attachments/assets/31523868-b1df-462f-a5af-eb06f0ce5618" />
 
@@ -91,11 +91,11 @@ Task 3 --> Partition 3
 The DAG scheduler determines the stage and creates the task set. The Task Scheduler then takes those tasks and works with cluster manager to get them running on executor resources.
 
 **What does the Task Scheduler actually do?**
-_1. Receives tasks from the DAG Scheduler:_ The DAG Scheduler creates **TaskSet** for a stage. The Task Scheduler receives this collection of tasks.
-_2. Schedules tasks onto executors:_ The Task Scheduler tries to find available executor resources where those tasks can run. If an executor has only 4 cores available, then only 4 tasks can execute concurrently. 
+1. _Receives tasks from the DAG Scheduler:_ The DAG Scheduler creates **TaskSet** for a stage. The Task Scheduler receives this collection of tasks.
+2. _Schedules tasks onto executors:_ The Task Scheduler tries to find available executor resources where those tasks can run. If an executor has only 4 cores available, then only 4 tasks can execute concurrently. 
 `Task finishes --> Executor core becomes available --> Another task can be scheduled`
-_3. Works with the Cluster Manager:_ The Task Scheduler does not itself create executor processes. The Cluster Manager is responsible for providing resources/executors to Spark. And the Task Scheduler schedules tasks onto those resources/executors.
-_4. Handles task locality:_ Task Scheduler tries to run tasks as clos to their required data as practical. Why? Because moving computation to the data is often cheaper than moving large amounts of data across the network.
+3. _Works with the Cluster Manager:_ The Task Scheduler does not itself create executor processes. The Cluster Manager is responsible for providing resources/executors to Spark. And the Task Scheduler schedules tasks onto those resources/executors.
+4. _Handles task locality:_ Task Scheduler tries to run tasks as clos to their required data as practical. Why? Because moving computation to the data is often cheaper than moving large amounts of data across the network.
 
 |                       | DAG Scheduler<br>(What stages do I need?) | Task Scheduler<br>(Where can I run these tasks?) |
 | --------------------- | ----------------------------------------- | ------------------------------------------------ |
