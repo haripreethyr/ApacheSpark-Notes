@@ -1,0 +1,36 @@
+# SPARK:
+
+### APACHE SPARK: 
+An open-source, distributed computing <mark style="background: #BBFABBA6;">framework built to process massive amounts of data quickly and efficiently</mark>. Widely used because it <mark style="background: #BBFABBA6;">processes data in-memory</mark>. This makes it up to 100 times faster than older disk-based technologies like Hadoop.
+
+Rather than relying on one powerful computer, Spark splits massive data sets across a cluster of multiple machines to process the data simultaneously in parallel.
+
+**Analogy:** Think of Spark as a super-fast kitchen where many chefs (computers) cook together. Instead of one chef making a huge meal alone (slow), Spark splits the recipe into smaller tasks and distributes them across multiple chefs, then combines the results quickly.
+
+**Why Apache Spark?:**
+There are two approaches to handle big data: Monolithic and Distributed.
+	**Monolithic:** Upgrade the system by adding RAM, cores to just one machine. What we do is Vertical Scaling — adding more computational power to just one machine. But there's a limit to scale the system vertically. And relying on one machine is not an advantage. Imagine if the system fails or crashes.
+	**Distributed:** Distributed computing solves these issues. They Add the systems (add more nodes). This is Horizontal Scaling. Say, you add 10 machines to the node and one of them is not working, you could still use 9 machines to process the data.
+
+**Apache Spark vs. MapReduce:** Before Apache Spark, Hadoop's MapReduce was used for distributed computing.
+	**MapReduce:** Traditional big data frameworks like Hadoop MapReduce write intermediate results to physical disks between jobs. 
+	**Apache Spark:** Everything is processed in RAM. All the intermediate results are stored in the RAM. Disk is also used — when RAM is filled, the data is spilled to the disk.
+### A. SPARK ARCHITECTURE:
+Spark follows a master-slave architecture to distribute workloads across a cluster. When you submit a Spark application, four main components come into play:
+
+**1. Spark Session**
+**2. Driver Program**
+**2. Cluster Manager (YARN, Kubernetes, Spark standalone, or Databricks' own manager)**
+**3. Executors/Worker Nodes**
+
+<img width="1430" height="1018" alt="Spark Architecture" src="https://github.com/user-attachments/assets/9f124dba-9201-4296-8511-4960b98acbaf" />
+
+
+**Spark Session:** The single entry point to write code. It acts as the dashboard where you control Spark DataFrames, SQL Queries, and cluster settings. We connect Driver node, and Cluster Manager with SparkContext (SparkContext is embedded into SparkSession). Whatever the Code is submitted to the SparkSession, it goes to the Cluster Manager to create  the driver program. Spark applications are coordinated by the SparkContext. In Databricks, The Spark Session is created by Databricks itself.
+
+**CLUSTER MANAGER:** The "dispatcher" that assigns tasks. The external manager (e.g., YARN, Kubernetes, Mesos or Spark Standalone) that owns physical servers and assigns hardware resources to Spark on request. In Databricks, this is abstracted away, but under the hood it's still doing the same job: deciding *where* your executors physically run.
+
+**THE DRIVER PROGRAM:** The "manager" that plans the work. It translates your code into executable plans, asks the cluster manager for workers, monitors work progress, and collect the results from executors. It splits the physical plan into **Jobs --> stages --> tasks.**
+This is the machine where the SparkContext is created and where the main Spark Application runs. It orchestrates the execution of tasks on the cluster. The Spark Driver process runs on the driver node and coordinates the execution of the Spark application.
+
+**WORKER NODES:** The "Workers" that actually crunch the data. They hold Partitions in RAM/disk (depending on the storage level specified for RDDs or DataFrames) for caching and perform computation tasks assigned by the driver. Report status back to the driver. Each worker node runs a Spark Worker process, which is responsible for launching executors and managing resources on the node. Executors are JVM processes that run on worker nodes and execute tasks. Each worker node/ machine has only one executor in modern applications. Each executor is allocated a portion of the node's CPU cores and memory. Executors execute individual tasks, which involve processing data partitions, applying transformations, and performing computations. Executors may cache and store data partitions in memory or spill them to disk if memory is insufficient.
